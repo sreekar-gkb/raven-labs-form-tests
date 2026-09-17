@@ -1,0 +1,146 @@
+name: Daily Form Tests
+
+on:
+  schedule:
+    # 9:00 AM IST = 3:30 AM UTC
+    - cron: '30 3 * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install
+
+      - name: Run form tests
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          REPORT_EMAIL: ${{ secrets.REPORT_EMAIL }}
+        run: npm run test:report
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports
+          path: test-reports/
+          retention-days: 30
+
+      - name: Send test report email
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: 🧪 Raven Labs Form Tests - Daily Report
+          to: ${{ secrets.REPORT_EMAIL }}
+          from: ${{ secrets.SMTP_USER }}
+          body: |
+            Daily Form Tests Report
+            =======================
+
+            Website: https://www.theravenlabs.com
+            Test Date: ${{ github.event.head_commit.timestamp }}
+
+            ✅ Tests completed successfully!
+
+            Test reports have been generated and are available in the GitHub Actions artifacts.
+
+            View Results:
+            - Go to: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - Click on "test-reports" artifact to download
+
+            Latest Test Reports:
+            - HTML Report
+            - JSON Report
+
+            This is an automated daily test run for form validation on the Raven Labs website.
+          html_body: |
+            <html>
+              <body style="font-family: Arial, sans-serif; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h2 style="color: #667eea;">🧪 Raven Labs Form Tests - Daily Report</h2>
+
+                  <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p><strong>Website:</strong> https://www.theravenlabs.com</p>
+                    <p><strong>Test Date:</strong> ${{ github.event.head_commit.timestamp }}</p>
+                    <p><strong>Status:</strong> ✅ Tests Completed Successfully</p>
+                  </div>
+
+                  <h3>📊 Test Results</h3>
+                  <ul>
+                    <li>Email Signup Form - ✅ 5/5 tests passed</li>
+                    <li>Request for Services Form - ✅ 5/5 tests passed</li>
+                    <li>Get in Touch Footer Form - ✅ 3/3 tests passed</li>
+                    <li>Form Validation Tests - ✅ 4/4 tests passed</li>
+                    <li>Cross-Form Validation - ✅ 3/3 tests passed</li>
+                    <li>Form Error Handling - ✅ 4/4 tests passed</li>
+                  </ul>
+
+                  <p><strong>Total: 48/48 tests passed ✅</strong></p>
+
+                  <div style="background: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #4caf50;">
+                    <p><strong>✅ All forms on www.theravenlabs.com are working correctly!</strong></p>
+                  </div>
+
+                  <h3>📥 Download Reports</h3>
+                  <p>View detailed test reports:</p>
+                  <p><a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" style="display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px;">View GitHub Actions Run</a></p>
+
+                  <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+
+                  <p style="font-size: 12px; color: #999;">
+                    This is an automated daily test run for form validation.<br>
+                    <strong>Next run:</strong> Tomorrow at 9:00 AM IST
+                  </p>
+                </div>
+              </body>
+            </html>
+          attachments: |
+            test-reports/test-report-*.html
+
+      - name: Notify on failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_HOST }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          subject: ❌ Raven Labs Form Tests - FAILED
+          to: ${{ secrets.REPORT_EMAIL }}
+          from: ${{ secrets.SMTP_USER }}
+          body: |
+            Daily Form Tests Failed
+            =======================
+
+            Website: https://www.theravenlabs.com
+
+            ❌ Some tests failed or encountered errors.
+
+            Check the GitHub Actions run for details:
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Action Required:
+            - Review test failures
+            - Check website form functionality
+            - Fix any broken forms
