@@ -1,0 +1,30 @@
+{
+  "name": "raven-labs-form-tests",
+  "version": "1.0.0",
+  "description": "Automated daily form testing for Raven Labs website with email reports",
+  "main": "run-tests-and-report.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:report": "node run-tests-and-report.js",
+    "test:headed": "playwright test --headed",
+    "report:open": "playwright show-report"
+  },
+  "keywords": [
+    "playwright",
+    "testing",
+    "automation",
+    "forms",
+    "e2e"
+  ],
+  "author": "Raven Labs",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "nodemailer": "^6.9.7"
+  }
+}
